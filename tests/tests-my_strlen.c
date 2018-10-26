@@ -5,56 +5,38 @@
 ** test strlen
 */
 
+#include <assert.h>
 #include <criterion/criterion.h>
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include <dlfcn.h>
 
-Test(utils, simple_strlen)
-{
-	void	*handle;
-	size_t	(*my_strlen)(char*);
-	char	*error;
-	char	*str = strdup("bonjour");
+void	*handle;
+size_t	(*my_strlen)(char*);
+char	*str;
 
-	if (!str)
-		exit(84);
+static void init(void)
+{
 	handle = dlopen("./libasm.so", RTLD_LAZY);
-	if (!handle)
-		exit(84);
+	assert(handle);
 	my_strlen = dlsym(handle, "strlen");
-	error = dlerror();
-	if (error != NULL) {
-		printf("%s\n", error);
-		exit(84);
-	}
-	cr_assert(strlen(str) == (*my_strlen)(str));
+	assert(!dlerror());
+}
+
+static void fini(void)
+{
 	dlclose(handle);
 	free(str);
 }
 
-Test(utils, strlen_empty_string)
+Test(utils, simple_strlen, .init = init, .fini = fini)
 {
-	void	*handle;
-	size_t	(*my_strlen)(char*);
-	char	*error;
-	char	*str = strdup("");
-
-	if (!str)
-		exit(84);
-	handle = dlopen("./libasm.so", RTLD_LAZY);
-	if (!handle)
-		exit(84);
-	my_strlen = dlsym(handle, "strlen");
-	error = dlerror();
-	if (error != NULL) {
-		printf("%s\n", error);
-		exit(84);
-	}
+	str = strdup("bonjour");
+	assert(str);
 	cr_assert(strlen(str) == (*my_strlen)(str));
-	dlclose(handle);
-	free(str);
+}
+
+Test(utils, strlen_empty_string, .init = init, .fini = fini)
+{
+	str = strdup("");
+	assert(str);
+	cr_assert(strlen(str) == (*my_strlen)(str));
 }

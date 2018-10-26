@@ -5,60 +5,68 @@
 ** test memcpy
 */
 
+#include <assert.h>
 #include <criterion/criterion.h>
-
-#include <stdio.h>
-
 #include <dlfcn.h>
 
-Test(utils, simple_memcpy)
-{
-	void	*handle;
-	void	*(*my_memcpy)(void*, const void *, size_t);
-	char	*error;
-	char	*str = strdup("bonjour");
-	char	*str2 = strdup("hellooo");
+void	*handle;
+void	*(*my_memcpy)(void*, const void *, size_t);
+char	*str;
+char	*ret;
+char	*sys;
 
-	if (!str || !str2)
-		exit(84);
+static void init(void)
+{
 	handle = dlopen("./libasm.so", RTLD_LAZY);
-	if (!handle)
-		exit(84);
+	assert(handle);
 	my_memcpy = dlsym(handle, "memcpy");
-	error = dlerror();
-	if (error != NULL) {
-		printf("%s\n", error);
-		exit(84);
-	}
-	str = (*my_memcpy)(str, str2, strlen(str));
-	cr_assert(strcmp(str, str2) == 0);
+	assert(!dlerror());
+}
+
+static void fini(void)
+{
 	dlclose(handle);
 	free(str);
 }
 
-Test(utils, simple_memcpy_zero_char)
+Test(utils, simple_memcpy, .init = init, .fini = fini)
 {
-	void	*handle;
-	void	*(*my_memcpy)(void*, const void *, size_t);
-	char	*error;
-	char	*str = strdup("bonjour");
-	char	*str_sys = strdup("bonjour");
-	char	*str2 = strdup("hellooo");
+	char buff1[32] = "";
+	char buff2[32] = "";
 
-	if (!str || !str2)
-		exit(84);
-	handle = dlopen("./libasm.so", RTLD_LAZY);
-	if (!handle)
-		exit(84);
-	my_memcpy = dlsym(handle, "memcpy");
-	error = dlerror();
-	if (error != NULL) {
-		printf("%s\n", error);
-		exit(84);
-	}
-	str = (*my_memcpy)(str, str2, 0);
-	str_sys = memcpy(str_sys, str2, 0);
-	cr_assert(strcmp(str, str_sys) == 0);
-	dlclose(handle);
-	free(str);
+	str = strdup("zfdergfcvtrryhtyt");
+	assert(str);
+
+	ret = (*my_memcpy)(buff1, str, strlen(str));
+	sys = memcpy(buff2, str, strlen(str));
+	cr_assert(strcmp(buff1, buff2) == 0);
+	cr_assert(ret == buff1 && sys == buff2);
+}
+
+Test(utils, empty, .init = init, .fini = fini)
+{
+	char buff1[32] = "";
+	char buff2[32] = "";
+
+	str = strdup("");
+	assert(str);
+
+	ret = (*my_memcpy)(buff1, str, strlen(str));
+	sys = memcpy(buff2, str, strlen(str));
+	cr_assert(ret == buff1 && sys == buff2);
+	cr_assert(strcmp(buff1, buff2) == 0);
+}
+
+Test(utils, one_char, .init = init, .fini = fini)
+{
+	char buff1[32] = "";
+	char buff2[32] = "";
+
+	str = strdup("a");
+	assert(str);
+
+	ret = (*my_memcpy)(buff1, str, strlen(str));
+	sys = memcpy(buff2, str, strlen(str));
+	cr_assert(ret == buff1 && sys == buff2);
+	cr_assert(strcmp(buff1, buff2) == 0);
 }
