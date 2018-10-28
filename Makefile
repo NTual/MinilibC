@@ -36,50 +36,30 @@ SRCS	=	$(SRC)my_strlen.asm \
 		$(SRC)fstat.asm \
 		$(SRC)mmap.asm
 
-TESTSRC	=	$(TESTS)tests-my_strlen.c \
-		$(TESTS)tests-my_strchr.c \
-		$(TESTS)tests-my_memset.c \
-		$(TESTS)tests-my_memcpy.c \
-		$(TESTS)tests-my_strcmp.c \
-		$(TESTS)tests-my_rindex.c \
-		$(TESTS)tests-my_strstr.c \
-		$(TESTS)tests-my_strcspn.c \
-		$(TESTS)tests-my_strpbrk.c \
-		$(TESTS)tests-my_strncmp.c \
-		$(TESTS)tests-my_strcasecmp.c
-
 OBJ	=	$(SRCS:.asm=.o)
-
-OBJTEST	=	$(TESTSRC:.c=.o)
 
 NAME	=	libasm.so
 
-NAME_TEST	=	criterion
-
 CFLAGS	+=	-W -Wextra -Wall -Werror
 
-%.o: %.asm
-	nasm -f elf64 -o $@ $<
+%.o:		%.asm
+		nasm -f elf64 -o $@ $<
 
-all:	$(NAME)
+all:		$(NAME)
 
 $(NAME):	$(OBJ)
-	$(LD) $(OBJ) -o $(NAME) -shared
+		$(LD) $(OBJ) -o $(NAME) -shared
 
 clean:
-	$(RM) $(OBJ)
-	$(RM) $(SRCS:.asm=.asm~)
-	$(RM) $(SRCS:.asm=.asm#)
-	$(RM) $(OBJTEST)
-	$(RM) $(TESTSRC:.c=.c~)
-	$(RM) $(TESTSRC:.c=.c#)
+		make clean -C $(TESTS) --no-print-directory
+		$(RM) $(OBJ)
 
-fclean: clean
-	$(RM) $(NAME)
-	$(RM) $(NAME_TEST)
+fclean:		clean
+		make fclean -C $(TESTS) --no-print-directory
+		$(RM) $(NAME)
 
-re: fclean all
+re:		fclean all
 
-tests_run:	re $(OBJTEST)
-	$(CC) $(OBJTEST) -o $(NAME_TEST) -lcriterion -coverage -ldl
-	./criterion --verbose
+tests_run:	re
+		mv $(NAME) $(TESTS)
+		make -C $(TESTS) --no-print-directory
